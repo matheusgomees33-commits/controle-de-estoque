@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Controle de Estoque</title>
+  
+  <style>:root{
+  --bg:#f4f5f7;--card:#fff;--ink:#172033;--muted:#64708a;--line:#e1e5ec;--soft:#f7f8fa;
+  --side:#16213a;--side2:#22304f;--accent:#2563eb;--accentink:#fff;
+  --ok:#166534;--okbg:#dcfce7;--warn:#92400e;--warnbg:#fef3c7;--bad:#991b1b;--badbg:#fee2e2;--info:#1e40af;--infobg:#dbeafe;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#0f1524;--card:#18213a;--ink:#e8ecf5;--muted:#9aa6c0;--line:#2a3555;--soft:#1d2845;
+  --side:#0b1120;--side2:#1b2745;--accent:#3b82f6;
+  --ok:#86efac;--okbg:#14532d;--warn:#fcd34d;--warnbg:#78350f;--bad:#fca5a5;--badbg:#7f1d1d;--info:#93c5fd;--infobg:#1e3a8a}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+[hidden]{display:none!important}
+h1{font-size:1.5rem;margin:0}h2{font-size:1.05rem;margin:1.6rem 0 .7rem}
+small,.sub{color:var(--muted)}.sub{margin:.25rem 0 1rem}
+button{font:inherit;padding:.55rem 1rem;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accentink)}
+button.grande{padding:.8rem 1rem;width:100%}
+button.perigo{color:var(--bad)}
+input,select{font:inherit;padding:.6rem .7rem;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);width:100%}
+input:disabled,select:disabled{opacity:.6}
+:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+label{display:flex;flex-direction:column;gap:.3rem;font-size:.9rem;font-weight:600}
+label small{font-weight:400}
+.erro-inline{color:var(--bad);margin:.5rem 0 0;min-height:1.2em;font-size:.9rem}
+
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:1rem}
+.login-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2rem;width:min(380px,100%);display:flex;flex-direction:column;gap:.9rem;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+.login-card .dica{font-size:.82rem;color:var(--muted);background:var(--soft);padding:.7rem;border-radius:8px;margin:0}
+
+/* estrutura */
+#app{display:flex;min-height:100vh}
+.sidebar{width:250px;flex-shrink:0;background:var(--side);color:#e8edf5;padding:1.2rem .8rem;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:1rem}
+.brand{display:flex;gap:.6rem;align-items:center;padding:0 .4rem}
+.brand h1{font-size:1rem}.brand p{margin:0;font-size:.75rem;color:#a9b4c8}
+nav{display:flex;flex-direction:column;gap:.15rem;flex:1;overflow-y:auto}
+nav button{background:none;border:0;color:inherit;text-align:left;padding:.6rem .7rem;border-radius:8px;display:flex;gap:.6rem}
+nav button:hover{background:var(--side2)}nav button.active{background:var(--accent);color:#fff}
+.user{font-size:.82rem;display:flex;flex-direction:column;gap:.5rem;border-top:1px solid var(--side2);padding:.8rem .4rem 0}
+.user button{background:var(--side2);color:#fff;border:0}
+main{flex:1;min-width:0;padding:1.5rem 2rem 3rem;max-width:1150px}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.toast{position:sticky;top:.5rem;z-index:5;margin-bottom:1rem;padding:.75rem 1rem;border-radius:8px;background:var(--okbg);color:var(--ok);box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.toast.erro{background:var(--badbg);color:var(--bad)}.toast.alerta{background:var(--warnbg);color:var(--warn)}
+
+/* cartões, tabelas, selos */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:.5rem}
+.card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:.9rem 1rem}
+.card span{display:block;font-size:.82rem;color:var(--muted)}.card strong{font-size:1.5rem}
+.card.warn{border-left-color:#d97706}.card.bad{border-left-color:#dc2626}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.painel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1rem 1.2rem}
+.painel h2{margin-top:0}
+.lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.lista li{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.vazio{text-align:center;color:var(--muted);padding:1.4rem}
+.barra{display:grid;grid-template-columns:110px 1fr 40px;gap:.6rem;align-items:center;font-size:.88rem;margin:.35rem 0}
+.barra i{display:block;height:10px;border-radius:5px;background:var(--accent)}
+.table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:.65rem .8rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{background:var(--soft);color:var(--muted);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.acoes{white-space:nowrap;text-align:right}td.acoes button{padding:.3rem .6rem;font-size:.84rem;margin-left:.3rem}
+.badge{display:inline-block;padding:.1rem .6rem;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.badge.ok,.badge.entrada{background:var(--okbg);color:var(--ok)}
+.badge.baixo,.badge.vencendo,.badge.ajuste{background:var(--warnbg);color:var(--warn)}
+.badge.zerado,.badge.vencido,.badge.saida{background:var(--badbg);color:var(--bad)}
+.filtros{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:.8rem}.filtros>*{flex:1;min-width:150px}.filtros>input[type=search]{flex:2}
+
+/* formulários */
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}.span2{grid-column:span 2}
+.actions{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:1rem}
+.seg button{border:0;border-radius:0}.seg button.on{background:var(--accent);color:#fff}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:1.4rem;width:min(640px,94vw);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(10,15,30,.55)}dialog h2{margin-top:0}
+.aviso-box{background:var(--warnbg);color:var(--warn);padding:.7rem 1rem;border-radius:8px;margin-bottom:1rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
+
+@media (max-width:820px){
+  #app{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:static;padding:.8rem}
+  nav{flex-direction:row;overflow-x:auto;flex:none}nav button{white-space:nowrap}
+  .user{flex-direction:row;align-items:center;justify-content:space-between;border:0;padding:0 .4rem}
+  main{padding:1rem}.grid2,.form-grid{grid-template-columns:1fr}.span2{grid-column:auto}
+}
+@media print{
+  .sidebar,.no-print,.toast,button{display:none!important}
+  body{background:#fff;color:#000}main{padding:0;max-width:none}.table-wrap,.card,.painel{border-color:#999}
+}
+</style>
+</head>
+<body>
+  <!-- TELA DE LOGIN -->
+  <section id="login" class="login">
+    <form id="formLogin" class="login-card">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJMb2dvIiB4bWxuczpjMnBhPSJodHRwOi8vYzJwYS5vcmcvbWFuaWZlc3QiPjxtZXRhZGF0YT48YzJwYTptYW5pZmVzdD5BQUFXZ21wMWJXSUFBQUFlYW5WdFpHTXljR0VBRVFBUWdBQUFxZ0E0bTNFRFl6SndZUUFBQUJaY2FuVnRZZ0FBQUVkcWRXMWtZekp0WVFBUkFCQ0FBQUNxQURpYmNRTjFjbTQ2WXpKd1lUbzNOR1UyWkRWaE1TMWtPVEF5TFRRMk9USXRPR1l4TWkwNU4yVXdZbVF4TVRVM09XTUFBQUFEbDJwMWJXSUFBQUFwYW5WdFpHTXlZWE1BRVFBUWdBQUFxZ0E0bTNFRFl6SndZUzVoYzNObGNuUnBiMjV6QUFBQUFMeHFkVzFpQUFBQVJHcDFiV1JqWW05eUFCRUFFSUFBQUtvQU9KdHhFMk15Y0dFdWFXNW5jbVZrYVdWdWRDNTJNd0FBQUFBWVl6SnphSk56aWFpQzl0UThBclRtWmZ6Z2pIMEFBQUJ3WTJKdmNxTnBaR002Wm05eWJXRjBiV2x0WVdkbEwzTjJaeXQ0Yld4cWFXNXpkR0Z1WTJWSlJIZ3NlRzF3T21scFpEb3lNekZsWVRrMlpTMHlNR1ZrTFRRd1pXWXRZalV6TUMwMU56RTVNekJqTm1NMVpEUnNjbVZzWVhScGIyNXphR2x3YUhCaGNtVnVkRTltQUFBQjRtcDFiV0lBQUFCQmFuVnRaR05pYjNJQUVRQVFnQUFBcWdBNG0zRVRZekp3WVM1aFkzUnBiMjV6TG5ZeUFBQUFBQmhqTW5Ob0tOdzJuYjdhRWhOdlNiandweW1YbVFBQUFabGpZbTl5b21kaFkzUnBiMjV6Z3FKbVlXTjBhVzl1YTJNeWNHRXViM0JsYm1Wa2FuQmhjbUZ0WlhSbGNuT2hhMmx1WjNKbFpHbGxiblJ6Z2FKamRYSnNlQzF6Wld4bUkycDFiV0ptUFdNeWNHRXVZWE56WlhKMGFXOXVjeTlqTW5CaExtbHVaM0psWkdsbGJuUXVkak5rYUdGemFGZ2dkaGx1R1kwOHFOanBvQWRwNkJJZ1RwZHB0SDlYMHdneHpWcVo4bmRHdWF1a1ptRmpkR2x2Ym5nZFkyOXRMbUZ1ZEdoeWIzQnBZeTVqYkdGMVpHVXVjSEp2ZG1sa1pXUnFjR0Z5WVcxbGRHVnljNkY0SDJOdmJTNWhiblJvY205d2FXTXViM0pwWjJsdUxXTnZibVpwWkdWdVkyVm5kVzVyYm05M2JtdGtaWE5qY21sd2RHbHZibmhtUTJ4aGRXUmxJSEJ5YjNacFpHVmtJSFJvYVhNZ1ptbHNaU0JoZENCMGFHVWdjbVZ4ZFdWemRDQnZaaUJoSUhWelpYSWdZVzVrSUcxaGVTQm9ZWFpsSUdOeVpXRjBaV1FnYjNJZ2JXOWthV1pwWldRZ2RHaGxJR1pwYkdVZ1kyOXVkR1Z1ZEhNdWJYTnZablIzWVhKbFFXZGxiblNoWkc1aGJXVm1RMnhoZFdSbGNtRnNiRUZqZEdsdmJuTkpibU5zZFdSbFpQVUFBQURJYW5WdFlnQUFBRUJxZFcxa1kySnZjZ0FSQUJDQUFBQ3FBRGliY1JOak1uQmhMbWhoYzJndVpHRjBZUUFBQUFBWVl6SnphQ1REd3VqQlpVVC9YOVhiVGhTKzZwb0FBQUNBWTJKdmNxVmpZV3huWm5Ob1lUSTFObU53WVdSTkFBQUFBQUFBQUFBQUFBQUFBR1JvWVhOb1dDQVRkM0ZrNmEybmNSanFOTjhUT1FIQjh0WG5RRS9mNTI0cllOUmhRb2M5dG1SdVlXMWxibXAxYldKbUlHMWhibWxtWlhOMGFtVjRZMngxYzJsdmJuT0JvbVZ6ZEdGeWRCaVlabXhsYm1kMGFCa2VCQUFBQWo1cWRXMWlBQUFBSjJwMWJXUmpNbU5zQUJFQUVJQUFBS29BT0p0eEEyTXljR0V1WTJ4aGFXMHVkaklBQUFBQ0QyTmliM0tsWTJGc1oyWnphR0V5TlRacGMybG5ibUYwZFhKbGVFMXpaV3htSTJwMWJXSm1QUzlqTW5CaEwzVnlianBqTW5CaE9qYzBaVFprTldFeExXUTVNREl0TkRZNU1pMDRaakV5TFRrM1pUQmlaREV4TlRjNVl5OWpNbkJoTG5OcFoyNWhkSFZ5WldwcGJuTjBZVzVqWlVsRWVDeDRiWEE2YVdsa09qTXpPV0V4TlRZMExXRTNNMll0TkdSaFlpMWlPVFl6TFRJeFpHUm1OR0l6WkRoak5YSmpjbVZoZEdWa1gyRnpjMlZ5ZEdsdmJuT0RvbU4xY214NExYTmxiR1lqYW5WdFltWTlZekp3WVM1aGMzTmxjblJwYjI1ekwyTXljR0V1YVc1bmNtVmthV1Z1ZEM1Mk0yUm9ZWE5vV0NCMkdXNFpqVHlvMk9tZ0Iybm9FaUJPbDJtMGYxZlRDREhOV3BueWQwYTVxNkpqZFhKc2VDcHpaV3htSTJwMWJXSm1QV015Y0dFdVlYTnpaWEowYVc5dWN5OWpNbkJoTG1GamRHbHZibk11ZGpKa2FHRnphRmdnODVJa3FLN29PemhFMUNxK1dDeDNiZm1zYzh5R0g5cjlXL2dML1B4MUprT2lZM1Z5YkhncGMyVnNaaU5xZFcxaVpqMWpNbkJoTG1GemMyVnlkR2x2Ym5Ndll6SndZUzVvWVhOb0xtUmhkR0ZrYUdGemFGZ2dDVkJXTUhoUEtoQjFWMUlrVUVxZ1ZpV1RLTkRUYVM1ZWtYUlNIeHNrYSsxMFkyeGhhVzFmWjJWdVpYSmhkRzl5WDJsdVptK2paRzVoYldWdlFXNTBhSEp2Y0dsaklFWnBiR1Z6WjNabGNuTnBiMjVsTVM0d0xqQnJjM0JsWTFabGNuTnBiMjVsTWk0MExqQUFBQkE0YW5WdFlnQUFBQ2hxZFcxa1l6Smpjd0FSQUJDQUFBQ3FBRGliY1FOak1uQmhMbk5wWjI1aGRIVnlaUUFBQUJBSVkySnZjdEtFV1FJU29nRW1HQ0ZaQWdvd2dnSUdNSUlCamFBREFnRUNBaFJBNWFBSzdzSTUwTDY0Zy9vR1FnVTlaMVVUQURBS0JnZ3Foa2pPUFFRREF6QkpNUmN3RlFZRFZRUUtFdzVCYm5Sb2NtOXdhV01zSUZCQ1F6RXVNQ3dHQTFVRUF4TWxRVzUwYUhKdmNHbGpJRU52Ym5SbGJuUWdRM0psWkdWdWRHbGhiSE1nVW05dmRDQkRRVEFlRncweU5qQTRNRGN4T0RRek5UWmFGdzB5T0RBNE1EWXhPVFF6TlRaYU1FUXhGekFWQmdOVkJBb1REa0Z1ZEdoeWIzQnBZeXdnVUVKRE1Ta3dKd1lEVlFRREV5QkJiblJvY205d2FXTWdRMnhoZFdSbElFTnZiblJsYm5RZ1UybG5ibWx1WnpCWk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkpoNkNtdkxVQmdGRk5VMHZVS2xPVnRFNmRqZDE3TDVTdXdYMExlbUZpc0JNM2RrZC8zY3lqeEZBM1FvNVM0NmZYMC9paFkwVlo3bWZiOUtGNzAzdDVPaldEQldNQTRHQTFVZER3RUIvd1FFQXdJSGdEQVZCZ05WSFNVRURqQU1CZ29yQmdFRUFZUG9YZ0lCTUF3R0ExVWRFd0VCL3dRQ01BQXdId1lEVlIwakJCZ3dGb0FVemxIaUJJRk9aRnNqK09QRXo1bytuTUhYWE1Jd0NnWUlLb1pJemowRUF3TURad0F3WkFJd01YTWRGSjRCZXRMTFZZN09SdUU5bm9xYmJBWk9abi9hQXJYeVR3RkFaZktyUHp4RjJ2UG9KTmYxK1VDZGcxWEdBakJ3WDF6ZDlXR3FZa3FtTDVTRnF3MVF5U2pyMXpKZnBKTTkrMXJkRHdTUExNT1BPakt1aVhqb1UvcFVVZUc5UndtaFkzQmhaRmtObmdBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFQWllRSmFZVFNOODBzd1M2eHI2V2d3WXVpMWdZKytIZk9pUjl0cUE1Q0g3eTQwSTQ3UEtpZ2svZ0lMckNGaG1mUjg3Qi9LR2dZbngyVTZMWXlYcjQzWS90elk9PC9jMnBhOm1hbmlmZXN0PjwvbWV0YWRhdGE+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiMwZjc2NmUiLz48cGF0aCBkPSJNMzIgMTIgMTQgMjF2MjJsMTggOSAxOC05VjIxeiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMTQgMjFsMTggOSAxOC05TTMyIDMwdjIyIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPgo=" width="56" height="56" alt="">
+      <h1>Controle de Estoque</h1>
+      <p class="sub">Entre para acessar o sistema</p>
+      <label>Usuário<input id="lLogin" autocomplete="username"></label>
+      <label>Senha<input id="lSenha" type="password" autocomplete="current-password"></label>
+      <p id="lErro" class="erro-inline" role="alert"></p>
+      <button class="primary grande">Entrar</button>
+      <p class="dica">Modo demonstração: <b>qualquer usuário e senha</b> entram.<br>Dica: digite <b>operador</b> para ver o acesso limitado; qualquer outro nome entra como administrador.</p>
+    </form>
+  </section>
+
+  <!-- SISTEMA -->
+  <div id="app" hidden>
+    <aside class="sidebar">
+      <div class="brand"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJMb2dvIiB4bWxuczpjMnBhPSJodHRwOi8vYzJwYS5vcmcvbWFuaWZlc3QiPjxtZXRhZGF0YT48YzJwYTptYW5pZmVzdD5BQUFXZ21wMWJXSUFBQUFlYW5WdFpHTXljR0VBRVFBUWdBQUFxZ0E0bTNFRFl6SndZUUFBQUJaY2FuVnRZZ0FBQUVkcWRXMWtZekp0WVFBUkFCQ0FBQUNxQURpYmNRTjFjbTQ2WXpKd1lUbzNOR1UyWkRWaE1TMWtPVEF5TFRRMk9USXRPR1l4TWkwNU4yVXdZbVF4TVRVM09XTUFBQUFEbDJwMWJXSUFBQUFwYW5WdFpHTXlZWE1BRVFBUWdBQUFxZ0E0bTNFRFl6SndZUzVoYzNObGNuUnBiMjV6QUFBQUFMeHFkVzFpQUFBQVJHcDFiV1JqWW05eUFCRUFFSUFBQUtvQU9KdHhFMk15Y0dFdWFXNW5jbVZrYVdWdWRDNTJNd0FBQUFBWVl6SnphSk56aWFpQzl0UThBclRtWmZ6Z2pIMEFBQUJ3WTJKdmNxTnBaR002Wm05eWJXRjBiV2x0WVdkbEwzTjJaeXQ0Yld4cWFXNXpkR0Z1WTJWSlJIZ3NlRzF3T21scFpEb3lNekZsWVRrMlpTMHlNR1ZrTFRRd1pXWXRZalV6TUMwMU56RTVNekJqTm1NMVpEUnNjbVZzWVhScGIyNXphR2x3YUhCaGNtVnVkRTltQUFBQjRtcDFiV0lBQUFCQmFuVnRaR05pYjNJQUVRQVFnQUFBcWdBNG0zRVRZekp3WVM1aFkzUnBiMjV6TG5ZeUFBQUFBQmhqTW5Ob0tOdzJuYjdhRWhOdlNiandweW1YbVFBQUFabGpZbTl5b21kaFkzUnBiMjV6Z3FKbVlXTjBhVzl1YTJNeWNHRXViM0JsYm1Wa2FuQmhjbUZ0WlhSbGNuT2hhMmx1WjNKbFpHbGxiblJ6Z2FKamRYSnNlQzF6Wld4bUkycDFiV0ptUFdNeWNHRXVZWE56WlhKMGFXOXVjeTlqTW5CaExtbHVaM0psWkdsbGJuUXVkak5rYUdGemFGZ2dkaGx1R1kwOHFOanBvQWRwNkJJZ1RwZHB0SDlYMHdneHpWcVo4bmRHdWF1a1ptRmpkR2x2Ym5nZFkyOXRMbUZ1ZEdoeWIzQnBZeTVqYkdGMVpHVXVjSEp2ZG1sa1pXUnFjR0Z5WVcxbGRHVnljNkY0SDJOdmJTNWhiblJvY205d2FXTXViM0pwWjJsdUxXTnZibVpwWkdWdVkyVm5kVzVyYm05M2JtdGtaWE5qY21sd2RHbHZibmhtUTJ4aGRXUmxJSEJ5YjNacFpHVmtJSFJvYVhNZ1ptbHNaU0JoZENCMGFHVWdjbVZ4ZFdWemRDQnZaaUJoSUhWelpYSWdZVzVrSUcxaGVTQm9ZWFpsSUdOeVpXRjBaV1FnYjNJZ2JXOWthV1pwWldRZ2RHaGxJR1pwYkdVZ1kyOXVkR1Z1ZEhNdWJYTnZablIzWVhKbFFXZGxiblNoWkc1aGJXVm1RMnhoZFdSbGNtRnNiRUZqZEdsdmJuTkpibU5zZFdSbFpQVUFBQURJYW5WdFlnQUFBRUJxZFcxa1kySnZjZ0FSQUJDQUFBQ3FBRGliY1JOak1uQmhMbWhoYzJndVpHRjBZUUFBQUFBWVl6SnphQ1REd3VqQlpVVC9YOVhiVGhTKzZwb0FBQUNBWTJKdmNxVmpZV3huWm5Ob1lUSTFObU53WVdSTkFBQUFBQUFBQUFBQUFBQUFBR1JvWVhOb1dDQVRkM0ZrNmEybmNSanFOTjhUT1FIQjh0WG5RRS9mNTI0cllOUmhRb2M5dG1SdVlXMWxibXAxYldKbUlHMWhibWxtWlhOMGFtVjRZMngxYzJsdmJuT0JvbVZ6ZEdGeWRCaVlabXhsYm1kMGFCa2VCQUFBQWo1cWRXMWlBQUFBSjJwMWJXUmpNbU5zQUJFQUVJQUFBS29BT0p0eEEyTXljR0V1WTJ4aGFXMHVkaklBQUFBQ0QyTmliM0tsWTJGc1oyWnphR0V5TlRacGMybG5ibUYwZFhKbGVFMXpaV3htSTJwMWJXSm1QUzlqTW5CaEwzVnlianBqTW5CaE9qYzBaVFprTldFeExXUTVNREl0TkRZNU1pMDRaakV5TFRrM1pUQmlaREV4TlRjNVl5OWpNbkJoTG5OcFoyNWhkSFZ5WldwcGJuTjBZVzVqWlVsRWVDeDRiWEE2YVdsa09qTXpPV0V4TlRZMExXRTNNMll0TkdSaFlpMWlPVFl6TFRJeFpHUm1OR0l6WkRoak5YSmpjbVZoZEdWa1gyRnpjMlZ5ZEdsdmJuT0RvbU4xY214NExYTmxiR1lqYW5WdFltWTlZekp3WVM1aGMzTmxjblJwYjI1ekwyTXljR0V1YVc1bmNtVmthV1Z1ZEM1Mk0yUm9ZWE5vV0NCMkdXNFpqVHlvMk9tZ0Iybm9FaUJPbDJtMGYxZlRDREhOV3BueWQwYTVxNkpqZFhKc2VDcHpaV3htSTJwMWJXSm1QV015Y0dFdVlYTnpaWEowYVc5dWN5OWpNbkJoTG1GamRHbHZibk11ZGpKa2FHRnphRmdnODVJa3FLN29PemhFMUNxK1dDeDNiZm1zYzh5R0g5cjlXL2dML1B4MUprT2lZM1Z5YkhncGMyVnNaaU5xZFcxaVpqMWpNbkJoTG1GemMyVnlkR2x2Ym5Ndll6SndZUzVvWVhOb0xtUmhkR0ZrYUdGemFGZ2dDVkJXTUhoUEtoQjFWMUlrVUVxZ1ZpV1RLTkRUYVM1ZWtYUlNIeHNrYSsxMFkyeGhhVzFmWjJWdVpYSmhkRzl5WDJsdVptK2paRzVoYldWdlFXNTBhSEp2Y0dsaklFWnBiR1Z6WjNabGNuTnBiMjVsTVM0d0xqQnJjM0JsWTFabGNuTnBiMjVsTWk0MExqQUFBQkE0YW5WdFlnQUFBQ2hxZFcxa1l6Smpjd0FSQUJDQUFBQ3FBRGliY1FOak1uQmhMbk5wWjI1aGRIVnlaUUFBQUJBSVkySnZjdEtFV1FJU29nRW1HQ0ZaQWdvd2dnSUdNSUlCamFBREFnRUNBaFJBNWFBSzdzSTUwTDY0Zy9vR1FnVTlaMVVUQURBS0JnZ3Foa2pPUFFRREF6QkpNUmN3RlFZRFZRUUtFdzVCYm5Sb2NtOXdhV01zSUZCQ1F6RXVNQ3dHQTFVRUF4TWxRVzUwYUhKdmNHbGpJRU52Ym5SbGJuUWdRM0psWkdWdWRHbGhiSE1nVW05dmRDQkRRVEFlRncweU5qQTRNRGN4T0RRek5UWmFGdzB5T0RBNE1EWXhPVFF6TlRaYU1FUXhGekFWQmdOVkJBb1REa0Z1ZEdoeWIzQnBZeXdnVUVKRE1Ta3dKd1lEVlFRREV5QkJiblJvY205d2FXTWdRMnhoZFdSbElFTnZiblJsYm5RZ1UybG5ibWx1WnpCWk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkpoNkNtdkxVQmdGRk5VMHZVS2xPVnRFNmRqZDE3TDVTdXdYMExlbUZpc0JNM2RrZC8zY3lqeEZBM1FvNVM0NmZYMC9paFkwVlo3bWZiOUtGNzAzdDVPaldEQldNQTRHQTFVZER3RUIvd1FFQXdJSGdEQVZCZ05WSFNVRURqQU1CZ29yQmdFRUFZUG9YZ0lCTUF3R0ExVWRFd0VCL3dRQ01BQXdId1lEVlIwakJCZ3dGb0FVemxIaUJJRk9aRnNqK09QRXo1bytuTUhYWE1Jd0NnWUlLb1pJemowRUF3TURad0F3WkFJd01YTWRGSjRCZXRMTFZZN09SdUU5bm9xYmJBWk9abi9hQXJYeVR3RkFaZktyUHp4RjJ2UG9KTmYxK1VDZGcxWEdBakJ3WDF6ZDlXR3FZa3FtTDVTRnF3MVF5U2pyMXpKZnBKTTkrMXJkRHdTUExNT1BPakt1aVhqb1UvcFVVZUc5UndtaFkzQmhaRmtObmdBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFQWllRSmFZVFNOODBzd1M2eHI2V2d3WXVpMWdZKytIZk9pUjl0cUE1Q0g3eTQwSTQ3UEtpZ2svZ0lMckNGaG1mUjg3Qi9LR2dZbngyVTZMWXlYcjQzWS90elk9PC9jMnBhOm1hbmlmZXN0PjwvbWV0YWRhdGE+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiMwZjc2NmUiLz48cGF0aCBkPSJNMzIgMTIgMTQgMjF2MjJsMTggOSAxOC05VjIxeiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMTQgMjFsMTggOSAxOC05TTMyIDMwdjIyIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPgo=" width="36" height="36" alt=""><div><h1>Controle de Estoque</h1><p>Gerenciamento de produtos</p></div></div>
+      <nav id="menu" aria-label="Menu principal"></nav>
+      <div class="user"><span id="uNome"></span><button id="btnSair">↩ Sair</button></div>
+    </aside>
+    <main>
+      <div id="aviso" class="toast" role="status" hidden></div>
+      <div id="tela"></div>
+    </main>
+  </div>
+
+  <!-- JANELAS (formulário genérico e confirmação) -->
+  <dialog id="modal">
+    <form id="formModal" novalidate>
+      <h2 id="mTitulo"></h2>
+      <div id="mCampos" class="form-grid"></div>
+      <p id="mErro" class="erro-inline" role="alert"></p>
+      <div class="actions"><button type="button" id="mCancelar">Cancelar</button><button type="submit" class="primary">💾 Salvar</button></div>
+    </form>
+  </dialog>
+  <dialog id="dlgConf">
+    <p id="confMsg"></p>
+    <div class="actions"><button id="confNao">Cancelar</button><button id="confSim" class="primary">Confirmar</button></div>
+  </dialog>
+
+  <script>'use strict';
+/* ======================================================================
+   DADOS.JS - camada de dados: armazenamento, login, regras de negócio.
+   A interface (script.js) só chama as funções deste arquivo.
+   ====================================================================== */
+const CHAVE = 'estoque-v2', SESSAO = 'estoque-sessao';
+// MODO DEMONSTRAÇÃO: com true, QUALQUER usuário e senha entram (use só para apresentar o protótipo).
+// Se o usuário digitado existir (admin, operador...), entra com o nível dele; senão, entra como administrador.
+// Para exigir senha de verdade, troque para false.
+const MODO_DEMO = true;
+
+/* ---------- Utilitários ---------- */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const moeda = (n) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n || 0);
+const dataHora = (iso) => new Date(iso).toLocaleString('pt-BR');
+const dataBR = (d) => (d ? d.split('-').reverse().join('/') : '—');
+const norm = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const diaLocal = (iso) => { const d = new Date(iso); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const hoje = () => diaLocal(new Date().toISOString());
+const somarDias = (n) => diaLocal(new Date(Date.now() + n * 864e5).toISOString());
+
+/* ---------- Armazenamento (LocalStorage) ---------- */
+let db = null;          // dados em memória
+let armazenamentoOk = true;
+let sessaoMem = null;
+
+function carregar() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CHAVE));
+    if (d && d.seq && ['produtos', 'fornecedores', 'categorias', 'usuarios', 'historico'].every((k) => Array.isArray(d[k]))) return d;
+  } catch { /* dados ausentes ou corrompidos */ }
+  return null;
+}
+function salvar() {
+  try { localStorage.setItem(CHAVE, JSON.stringify(db)); armazenamentoOk = true; }
+  catch { armazenamentoOk = false; }
+}
+function setSessao(id) {
+  sessaoMem = id;
+  try { id ? sessionStorage.setItem(SESSAO, id) : sessionStorage.removeItem(SESSAO); } catch { /* usa a memória */ }
+}
+function getSessao() { try { return sessionStorage.getItem(SESSAO) || sessaoMem; } catch { return sessaoMem; } }
+const usuarioAtual = () => db?.usuarios.find((u) => u.id === getSessao());
+const ehAdmin = () => usuarioAtual()?.papel === 'admin';
+
+/* ---------- Senhas: PBKDF2-SHA256 com salt (nunca guarda a senha pura) ---------- */
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+const novoSalt = () => (globalThis.crypto?.getRandomValues ? hex(crypto.getRandomValues(new Uint8Array(16))) : Math.random().toString(16).slice(2));
+async function hashSenha(senha, salt) {
+  if (!globalThis.crypto?.subtle) { // navegador sem Web Crypto: hash simples, só para a demonstração funcionar
+    let h = 5381; for (const c of salt + senha) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0;
+    return 'demo' + h.toString(16);
+  }
+  const chave = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 100000, hash: 'SHA-256' }, chave, 256);
+  return hex(bits);
+}
+async function entrar(login, senha) {
+  let u = db.usuarios.find((x) => x.login.toLowerCase() === login.trim().toLowerCase());
+  if (MODO_DEMO) u = u || db.usuarios.find((x) => x.papel === 'admin');
+  else if (!u || (await hashSenha(senha, u.salt)) !== u.hash) return null;
+  setSessao(u.id);
+  return u;
+}
+
+/* ---------- CNPJ ---------- */
+function dvCnpj(base) {
+  const pesos = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2].slice(13 - base.length);
+  const r = [...base].reduce((a, n, i) => a + n * pesos[i], 0) % 11;
+  return r < 2 ? 0 : 11 - r;
+}
+function cnpjValido(c) {
+  const n = c.replace(/\D/g, '');
+  if (n.length !== 14 || /^(\d)\1+$/.test(n)) return false;
+  const d1 = dvCnpj(n.slice(0, 12));
+  return n.endsWith('' + d1 + dvCnpj(n.slice(0, 12) + d1));
+}
+const fmtCnpj = (c) => c.replace(/\D/g, '').replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+
+/* ---------- Dados de exemplo (protótipo) ---------- */
+async function dadosExemplo() {
+  const cnpj = (b) => fmtCnpj(b + dvCnpj(b) + dvCnpj(b + dvCnpj(b)));
+  const dia = (n) => new Date(Date.now() + n * 864e5).toISOString();
+  const usr = async (id, nome, login, senha, papel) => { const salt = novoSalt(); return { id, nome, login, papel, salt, hash: await hashSenha(senha, salt) }; };
+  const p = (id, nome, barras, categoria, fornecedorId, qtd, min, compra, venda, validade = '') =>
+    ({ id, nome, barras, categoria, fornecedorId, descricao: '', qtd, min, compra, venda, lote: validade ? 'L' + id : '', validade, cadastro: dia(-30) });
+  const h = (n, id, nome, tipo, qtd, saldo, obs, usuario) => ({ data: dia(-n), id, nome, tipo, qtd, saldo, obs, lote: '', usuario });
+  return {
+    seq: { P: 7, F: 3, C: 4, U: 2 }, ultimoBackup: null,
+    usuarios: [await usr('U001', 'Administrador', 'admin', 'admin123', 'admin'), await usr('U002', 'Operador Demo', 'operador', 'operador123', 'operador')],
+    categorias: ['Periféricos', 'Monitores', 'Cabos', 'Manutenção'].map((nome, i) => ({ id: 'C00' + (i + 1), nome })),
+    fornecedores: [
+      { id: 'F001', nome: 'TechDistrib Ltda', cnpj: cnpj('112223330001'), telefone: '(11) 3000-1000', endereco: 'Rua das Flores, 100 - São Paulo/SP' },
+      { id: 'F002', nome: 'Monitores & Cia', cnpj: cnpj('223334440001'), telefone: '(11) 3000-2000', endereco: 'Av. Brasil, 2000 - Campinas/SP' },
+      { id: 'F003', nome: 'Química Tech', cnpj: cnpj('334445550001'), telefone: '(19) 3000-3000', endereco: 'Rua Verde, 55 - Jundiaí/SP' },
+    ],
+    produtos: [
+      p('P001', 'Mouse USB', '7891000000011', 'Periféricos', 'F001', 15, 5, 20, 35),
+      p('P002', 'Teclado ABNT2', '7891000000012', 'Periféricos', 'F001', 3, 5, 40, 65),
+      p('P003', 'Monitor 24"', '7891000000013', 'Monitores', 'F002', 10, 2, 480, 650),
+      p('P004', 'Cabo HDMI 2m', '7891000000014', 'Cabos', 'F002', 0, 10, 8, 19.9),
+      p('P005', 'Pasta térmica', '7891000000015', 'Manutenção', 'F003', 12, 4, 6, 15, somarDias(20)),
+      p('P006', 'Álcool isopropílico 1L', '7891000000016', 'Manutenção', 'F003', 8, 3, 18, 32, somarDias(200)),
+      p('P007', 'Headset', '7891000000017', 'Periféricos', 'F001', 6, 3, 55, 99),
+    ],
+    historico: [
+      h(1, 'P002', 'Teclado ABNT2', 'saida', 2, 3, 'Pedido 884', 'Operador Demo'),
+      h(2, 'P004', 'Cabo HDMI 2m', 'saida', 6, 0, 'Pedido 880', 'Operador Demo'),
+      h(3, 'P001', 'Mouse USB', 'saida', 5, 15, 'Pedido 871', 'Administrador'),
+      h(5, 'P001', 'Mouse USB', 'entrada', 20, 20, 'NF 3321', 'Administrador'),
+      h(6, 'P003', 'Monitor 24"', 'entrada', 10, 10, 'NF 3290', 'Administrador'),
+    ],
+  };
+}
+async function iniciarDados() { db = carregar() || (await dadosExemplo()); salvar(); }
+async function restaurarExemplo() { db = await dadosExemplo(); salvar(); }
+
+/* ---------- Situação dos produtos ---------- */
+const situacao = (p) => (p.qtd === 0 ? 'zerado' : p.qtd <= p.min ? 'baixo' : 'ok');
+function validadeStatus(p) {
+  if (!p.validade) return null;
+  const dias = Math.round((new Date(p.validade + 'T00:00') - new Date(hoje() + 'T00:00')) / 864e5);
+  return dias < 0 ? 'vencido' : dias <= 30 ? 'vencendo' : null;
+}
+const buscarProduto = (id) => db.produtos.find((p) => p.id === id);
+
+/* ---------- Entidades: campos do formulário + regras de validação ----------
+   Produtos, fornecedores, categorias e usuários usam o mesmo CRUD genérico.
+   soNovo: campo só pode ser definido no cadastro.                          */
+const nomeEmUso = (lista, nome, idAtual) => lista.some((x) => x.id !== idAtual && norm(x.nome) === norm(nome));
+const ENT = {
+  produtos: {
+    titulo: 'Produtos', singular: 'produto', prefixo: 'P', escritaOperador: true, lista: () => db.produtos,
+    vazio: 'Nenhum produto encontrado. Use o botão "Novo produto".',
+    campos: [
+      { k: 'nome', r: 'Nome do produto', t: 'text', obrig: 1 },
+      { k: 'id', r: 'Código', t: 'text', soNovo: 1, dica: 'Deixe vazio para gerar automaticamente' },
+      { k: 'barras', r: 'Código de barras', t: 'text' },
+      { k: 'categoria', r: 'Categoria', t: 'select', obrig: 1, op: () => db.categorias.map((c) => [c.nome, c.nome]) },
+      { k: 'fornecedorId', r: 'Fornecedor', t: 'select', op: () => db.fornecedores.map((f) => [f.id, f.nome]), vazio: '(nenhum)' },
+      { k: 'descricao', r: 'Descrição', t: 'text', largo: 1 },
+      { k: 'qtd', r: 'Quantidade inicial', t: 'number', passo: 1, soNovo: 1, dica: 'Depois, só muda por entrada, saída ou inventário' },
+      { k: 'min', r: 'Quantidade mínima', t: 'number', passo: 1 },
+      { k: 'compra', r: 'Preço de compra (R$)', t: 'number', passo: 0.01 },
+      { k: 'venda', r: 'Preço de venda (R$)', t: 'number', passo: 0.01 },
+      { k: 'lote', r: 'Lote', t: 'text' },
+      { k: 'validade', r: 'Validade', t: 'date' },
+    ],
+    validar(d, idAtual) {
+      if (!d.nome) return 'Informe o nome do produto.';
+      if (!d.categoria) return 'Escolha uma categoria (cadastre uma em "Categorias", se precisar).';
+      if ((!idAtual && !Number.isInteger(d.qtd)) || !Number.isInteger(d.min) || d.qtd < 0 || d.min < 0) return 'As quantidades devem ser números inteiros, sem valores negativos.';
+      if (!(d.compra >= 0) || !(d.venda >= 0)) return 'Os preços não podem ser negativos.';
+      const outros = db.produtos.filter((p) => p.id !== idAtual);
+      if (!idAtual && d.id) {
+        if (!/^[A-Za-z0-9._-]{1,20}$/.test(d.id)) return 'O código aceita letras, números, ponto, hífen e sublinhado (até 20).';
+        if (outros.some((p) => p.id.toLowerCase() === d.id.toLowerCase())) return 'Já existe um produto com este código.';
+      }
+      if (d.barras && outros.some((p) => p.barras === d.barras)) return 'Este código de barras já está em uso.';
+      if (nomeEmUso(outros, d.nome)) return 'Já existe um produto com este nome.';
+    },
+    remover: (p) => (db.historico.some((h) => h.id === p.id) ? 'Este produto possui movimentações e não pode ser excluído (o histórico seria perdido).' : null),
+  },
+  fornecedores: {
+    titulo: 'Fornecedores', singular: 'fornecedor', prefixo: 'F', lista: () => db.fornecedores, vazio: 'Nenhum fornecedor cadastrado.',
+    campos: [
+      { k: 'nome', r: 'Nome', t: 'text', obrig: 1, largo: 1 },
+      { k: 'cnpj', r: 'CNPJ', t: 'text', obrig: 1, dica: '14 dígitos' },
+      { k: 'telefone', r: 'Telefone', t: 'text' },
+      { k: 'endereco', r: 'Endereço', t: 'text', largo: 1 },
+    ],
+    validar(d, idAtual) {
+      if (!d.nome) return 'Informe o nome do fornecedor.';
+      if (!cnpjValido(d.cnpj)) return 'CNPJ inválido. Confira os 14 dígitos.';
+      if (db.fornecedores.some((f) => f.id !== idAtual && f.cnpj.replace(/\D/g, '') === d.cnpj.replace(/\D/g, ''))) return 'Já existe um fornecedor com este CNPJ.';
+      if (d.telefone && d.telefone.replace(/\D/g, '').length < 10) return 'Telefone incompleto (inclua o DDD).';
+    },
+    preparar: async (d) => { d.cnpj = fmtCnpj(d.cnpj); },
+    remover(f) { const n = db.produtos.filter((p) => p.fornecedorId === f.id).length; return n ? `Este fornecedor está associado a ${n} produto(s).` : null; },
+  },
+  categorias: {
+    titulo: 'Categorias', singular: 'categoria', prefixo: 'C', semEditar: true, lista: () => db.categorias, vazio: 'Nenhuma categoria cadastrada.',
+    campos: [{ k: 'nome', r: 'Nome da categoria', t: 'text', obrig: 1, largo: 1 }],
+    validar: (d, idAtual) => (!d.nome ? 'Informe o nome da categoria.' : nomeEmUso(db.categorias, d.nome, idAtual) ? 'Esta categoria já existe.' : null),
+    remover(c) { const n = db.produtos.filter((p) => p.categoria === c.nome).length; return n ? `Esta categoria é usada por ${n} produto(s).` : null; },
+  },
+  usuarios: {
+    titulo: 'Usuários', singular: 'usuário', prefixo: 'U', lista: () => db.usuarios, vazio: 'Nenhum usuário.',
+    campos: [
+      { k: 'nome', r: 'Nome', t: 'text', obrig: 1 },
+      { k: 'login', r: 'Login', t: 'text', obrig: 1, soNovo: 1 },
+      { k: 'papel', r: 'Nível de acesso', t: 'select', obrig: 1, op: () => [['admin', 'Administrador'], ['operador', 'Operador']] },
+      { k: 'senha', r: 'Senha', t: 'password', dica: 'Mínimo 6 caracteres. Ao editar, deixe vazio para manter a atual.' },
+    ],
+    validar(d, idAtual) {
+      if (!d.nome) return 'Informe o nome.';
+      if (!idAtual && !/^[A-Za-z0-9._-]{3,30}$/.test(d.login || '')) return 'O login deve ter 3 a 30 caracteres (letras, números, ponto, hífen ou sublinhado).';
+      if (!idAtual && db.usuarios.some((u) => u.login.toLowerCase() === d.login.toLowerCase())) return 'Este login já existe.';
+      if ((!idAtual || d.senha) && (d.senha || '').length < 6) return 'A senha deve ter pelo menos 6 caracteres.';
+      if (idAtual && d.papel !== 'admin' && !db.usuarios.some((u) => u.id !== idAtual && u.papel === 'admin')) return 'Deve existir pelo menos um administrador.';
+    },
+    preparar: async (d) => { if (d.senha) { d.salt = novoSalt(); d.hash = await hashSenha(d.senha, d.salt); } delete d.senha; },
+    remover(u) {
+      if (u.id === usuarioAtual()?.id) return 'Você não pode excluir o próprio usuário.';
+      return u.papel === 'admin' && db.usuarios.filter((x) => x.papel === 'admin').length < 2 ? 'Deve existir pelo menos um administrador.' : null;
+    },
+  },
+};
+
+function proximoId(ent) {
+  let id;
+  do id = ent.prefixo + String(++db.seq[ent.prefixo]).padStart(3, '0'); while (ent.lista().some((x) => x.id === id));
+  return id;
+}
+// Cria ou atualiza. Retorna { erro } ou { ok }.
+async function salvarEntidade(chave, dados, idAtual) {
+  const ent = ENT[chave];
+  const erro = ent.validar(dados, idAtual);
+  if (erro) return { erro };
+  if (ent.preparar) await ent.preparar(dados, idAtual);
+  if (idAtual) Object.assign(ent.lista().find((x) => x.id === idAtual), dados);
+  else ent.lista().push({ ...dados, id: dados.id || proximoId(ent), ...(chave === 'produtos' ? { cadastro: new Date().toISOString() } : {}) });
+  salvar();
+  return { ok: true };
+}
+function excluirEntidade(chave, id) {
+  if (!ehAdmin()) return { erro: 'Apenas administradores podem excluir.' };
+  const ent = ENT[chave], item = ent.lista().find((x) => x.id === id);
+  const erro = item ? ent.remover?.(item) : 'Item não encontrado.';
+  if (erro) return { erro };
+  ent.lista().splice(ent.lista().indexOf(item), 1);
+  salvar();
+  return { ok: true };
+}
+
+/* ---------- Movimentações (entrada, saída e ajuste de inventário) ---------- */
+function registrar(p, tipo, qtd, saldo, extra = {}) {
+  db.historico.unshift({ data: new Date().toISOString(), id: p.id, nome: p.nome, tipo, qtd, saldo, obs: extra.obs || '', lote: extra.lote || '', usuario: usuarioAtual()?.nome || '—' });
+}
+function movimentar(id, tipo, qtd, extra = {}) {
+  const p = buscarProduto(id);
+  if (!p) return { erro: 'Selecione um produto.' };
+  if (!Number.isInteger(qtd) || qtd <= 0) return { erro: 'Informe uma quantidade inteira maior que zero.' };
+  if (tipo === 'saida' && qtd > p.qtd) return { erro: `Saída maior que o disponível (${p.qtd} un.).` };
+  p.qtd += tipo === 'entrada' ? qtd : -qtd;
+  if (tipo === 'entrada' && (extra.lote || extra.validade)) { p.lote = extra.lote || ''; p.validade = extra.validade || ''; }
+  registrar(p, tipo, qtd, p.qtd, extra);
+  salvar();
+  return { produto: p };
+}
+function ajustarEstoque(id, contado) {
+  const p = buscarProduto(id), dif = contado - p.qtd;
+  p.qtd = contado;
+  registrar(p, 'ajuste', dif, contado, { obs: 'Inventário físico' });
+  salvar();
+}
+
+/* ---------- Backup ---------- */
+function exportarBackup() { db.ultimoBackup = new Date().toISOString(); salvar(); return JSON.stringify(db, null, 2); }
+function importarBackup(texto) {
+  let d;
+  try { d = JSON.parse(texto); } catch { return { erro: 'Arquivo inválido (não é um JSON).' }; }
+  const ok = d && d.seq && ['produtos', 'fornecedores', 'categorias', 'usuarios', 'historico'].every((k) => Array.isArray(d[k]));
+  if (!ok || !d.usuarios.some((u) => u.papel === 'admin' && u.hash && u.salt)) return { erro: 'Arquivo de backup inválido ou sem administrador.' };
+  db = d; salvar();
+  return { ok: true };
+}
+</script>
+  <script>'use strict';
+/* ======================================================================
+   SCRIPT.JS - interface: telas, formulários e eventos.
+   As regras de negócio ficam em dados.js.
+   ====================================================================== */
+const ROT = { ok: 'Normal', baixo: 'Estoque baixo', zerado: 'Sem estoque', vencido: 'Vencido', vencendo: 'Vence em breve', entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste' };
+const selo = (k) => `<span class="badge ${k}">${ROT[k]}</span>`;
+const seloProduto = (p) => selo(situacao(p)) + (validadeStatus(p) ? ' ' + selo(validadeStatus(p)) : '');
+const nomeForn = (id) => db.fornecedores.find((f) => f.id === id)?.nome || '—';
+const podeEditar = (ent) => ehAdmin() || ent.escritaOperador;
+const NAV = [['painel', '📊', 'Painel'], ['produtos', '📦', 'Produtos'], ['movimentar', '🔄', 'Movimentar estoque'], ['historico', '🕘', 'Histórico'],
+  ['fornecedores', '🚚', 'Fornecedores'], ['categorias', '🏷️', 'Categorias'], ['inventario', '📋', 'Inventário físico'], ['relatorios', '📈', 'Relatórios'],
+  ['usuarios', '👥', 'Usuários', 1], ['config', '💾', 'Backup e dados', 1]];
+let tela = 'painel', tipoMov = 'entrada', formAtual = null;
+
+/* ---------- Mensagens e confirmação ---------- */
+let temporizador;
+function aviso(texto, tipo = 'ok') {
+  const el = $('#aviso');
+  el.textContent = texto; el.className = 'toast ' + tipo; el.hidden = false;
+  clearTimeout(temporizador); temporizador = setTimeout(() => (el.hidden = true), 6000);
+}
+function confirmar(msg) {
+  return new Promise((res) => {
+    const d = $('#dlgConf');
+    $('#confMsg').textContent = msg;
+    const fim = (v) => { d.close(); res(v); };
+    $('#confSim').onclick = () => fim(true); $('#confNao').onclick = () => fim(false); d.oncancel = () => res(false);
+    d.showModal();
+  });
+}
+
+/* ---------- Download de arquivos (CSV e backup) ---------- */
+function baixar(nome, texto, tipo) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([texto], { type: tipo })); a.download = nome; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function baixarCSV(nome, cab, linhas) {
+  // Textos iniciados por = + - @ ganham um apóstrofo, evitando "injeção de fórmulas" no Excel.
+  const cel = (v) => { let s = typeof v === 'string' && /^[=+\-@\t\r]/.test(v) ? "'" + v : String(v ?? ''); return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  baixar(nome, '\ufeff' + [cab, ...linhas].map((l) => l.map(cel).join(';')).join('\r\n'), 'text/csv;charset=utf-8');
+}
+
+/* ---------- Colunas das tabelas de cadastro ---------- */
+ENT.produtos.colunas = [['Código', (p) => esc(p.id)], ['Produto', (p) => `<b>${esc(p.nome)}</b>${p.barras ? `<br><small>${esc(p.barras)}</small>` : ''}`],
+  ['Categoria', (p) => esc(p.categoria)], ['Fornecedor', (p) => esc(nomeForn(p.fornecedorId))],
+  ['Estoque', (p) => `<b>${p.qtd}</b> <small>/ mín. ${p.min}</small>`], ['Venda', (p) => moeda(p.venda)], ['Situação', seloProduto]];
+ENT.fornecedores.colunas = [['Nome', (f) => `<b>${esc(f.nome)}</b>`], ['CNPJ', (f) => esc(f.cnpj)], ['Telefone', (f) => esc(f.telefone) || '—'],
+  ['Endereço', (f) => esc(f.endereco) || '—'], ['Produtos', (f) => db.produtos.filter((p) => p.fornecedorId === f.id).length]];
+ENT.categorias.colunas = [['Categoria', (c) => `<b>${esc(c.nome)}</b>`], ['Produtos', (c) => db.produtos.filter((p) => p.categoria === c.nome).length]];
+ENT.usuarios.colunas = [['Nome', (u) => `<b>${esc(u.nome)}</b>`], ['Login', (u) => esc(u.login)], ['Nível', (u) => (u.papel === 'admin' ? 'Administrador' : 'Operador')]];
+
+/* ---------- Telas ---------- */
+const card = (r, v, c = '') => `<div class="card ${c}"><span>${r}</span><strong>${v}</strong></div>`;
+const tabela = (cab, id) => `<div class="table-wrap"><table><thead><tr>${cab.map((c) => `<th>${c}</th>`).join('')}</tr></thead><tbody id="${id}"></tbody></table></div>`;
+const vazio = (n, txt) => `<tr><td class="vazio" colspan="${n}">${txt}</td></tr>`;
+
+function viewPainel() {
+  const ps = db.produtos, u = usuarioAtual();
+  const baixo = ps.filter((p) => situacao(p) === 'baixo').length, zer = ps.filter((p) => situacao(p) === 'zerado').length;
+  const venc = ps.filter(validadeStatus).length, valor = ps.reduce((s, p) => s + p.qtd * p.compra, 0);
+  const atencao = ps.filter((p) => situacao(p) !== 'ok' || validadeStatus(p));
+  const cats = {}; ps.forEach((p) => (cats[p.categoria] = (cats[p.categoria] || 0) + p.qtd));
+  const max = Math.max(1, ...Object.values(cats));
+  const dias = db.ultimoBackup ? (Date.now() - new Date(db.ultimoBackup)) / 864e5 : Infinity;
+  return `<div class="topo"><div><h1>Olá, ${esc(u.nome.split(' ')[0])} 👋</h1><p class="sub">Resumo do estoque hoje</p></div></div>
+    ${!armazenamentoOk ? '<div class="aviso-box">⚠️ Os dados não estão sendo salvos neste navegador (armazenamento bloqueado).</div>' : ''}
+    ${ehAdmin() && dias > 7 ? '<div class="aviso-box">💾 Faz mais de 7 dias sem backup. <button data-ir="config">Fazer backup agora</button></div>' : ''}
+    <div class="cards">${card('Total de produtos', ps.length)}${card('Unidades em estoque', ps.reduce((s, p) => s + p.qtd, 0))}${card('Estoque baixo', baixo, 'warn')}
+      ${card('Sem estoque', zer, 'bad')}${card('Valor em estoque (custo)', moeda(valor))}${card('Vencidos / a vencer', venc, 'warn')}</div>
+    <div class="grid2">
+      <section class="painel"><h2>⚠️ Precisam de atenção</h2><ul class="lista">${atencao.length ? atencao.map((p) =>
+        `<li>${seloProduto(p)} <b>${esc(p.nome)}</b> <small>${p.qtd} un. (mín. ${p.min})${p.validade ? ' · val. ' + dataBR(p.validade) : ''}</small></li>`).join('') : '<li class="vazio">✅ Tudo certo por aqui.</li>'}</ul></section>
+      <section class="painel"><h2>🕘 Últimas movimentações</h2><ul class="lista">${db.historico.slice(0, 6).map((h) =>
+        `<li>${selo(h.tipo)} <b>${esc(h.nome)}</b> <small>${h.qtd > 0 && h.tipo === 'ajuste' ? '+' : ''}${h.qtd} · ${dataHora(h.data)}</small></li>`).join('') || '<li class="vazio">Nenhuma movimentação ainda.</li>'}</ul></section>
+    </div>
+    <section class="painel" style="margin-top:1rem"><h2>📦 Unidades por categoria</h2>${Object.entries(cats).map(([c, n]) =>
+      `<div class="barra"><span>${esc(c)}</span><i style="width:${(n / max) * 100}%"></i><b>${n}</b></div>`).join('') || '<p class="vazio">Sem dados.</p>'}</section>`;
+}
+
+function viewEnt(chave) {
+  const ent = ENT[chave];
+  const filtros = chave === 'produtos' ? `<div class="filtros no-print">
+      <input id="fBusca" type="search" placeholder="🔎 Pesquisar por nome, código ou código de barras" aria-label="Pesquisar produto">
+      <select id="fCat" aria-label="Categoria"><option value="">Todas as categorias</option>${db.categorias.map((c) => `<option>${esc(c.nome)}</option>`).join('')}</select>
+      <select id="fSit" aria-label="Situação"><option value="">Todas as situações</option><option value="baixo">Estoque baixo</option><option value="zerado">Sem estoque</option></select></div>` : '';
+  return `<div class="topo"><h1>${ent.titulo}</h1>${podeEditar(ent) ? `<button class="primary" data-acao="novo" data-ent="${chave}">＋ Novo ${ent.singular}</button>` : '<small>Somente leitura para o seu perfil</small>'}</div>
+    ${filtros}${tabela([...ent.colunas.map((c) => c[0]), ''], 'tbEnt')}`;
+}
+function linhasEnt(chave) {
+  const ent = ENT[chave]; let l = ent.lista();
+  if (chave === 'produtos') {
+    const q = norm($('#fBusca').value.trim()), c = $('#fCat').value, s = $('#fSit').value;
+    l = l.filter((p) => (!q || [p.nome, p.id, p.barras].some((x) => norm(x).includes(q))) && (!c || p.categoria === c) && (!s || situacao(p) === s));
+  }
+  const acoes = (it) => (podeEditar(ent) && !ent.semEditar ? `<button data-acao="editar" data-ent="${chave}" data-id="${esc(it.id)}">✏️ Editar</button>` : '') +
+    (ehAdmin() ? `<button class="perigo" data-acao="excluir" data-ent="${chave}" data-id="${esc(it.id)}">🗑 Excluir</button>` : '');
+  $('#tbEnt').innerHTML = l.length ? l.map((it) => `<tr>${ent.colunas.map((c) => `<td>${c[1](it)}</td>`).join('')}<td class="acoes">${acoes(it)}</td></tr>`).join('')
+    : vazio(ent.colunas.length + 1, '📭 ' + ent.vazio);
+}
+
+function viewMov() {
+  const ent = tipoMov === 'entrada';
+  const ps = [...db.produtos].sort((a, b) => a.nome.localeCompare(b.nome));
+  return `<div class="topo"><h1>Movimentar estoque</h1></div>
+    <div class="seg"><button data-acao="tipoMov" data-tipo="entrada" class="${ent ? 'on' : ''}">⬇️ Entrada</button><button data-acao="tipoMov" data-tipo="saida" class="${ent ? '' : 'on'}">⬆️ Saída</button></div>
+    <form id="formMov" class="form-grid painel" novalidate>
+      <label class="span2">🔎 Código de barras ou código do produto<input id="movBarras" placeholder="Passe o leitor ou digite e tecle Enter" autocomplete="off"></label>
+      <label class="span2">Produto *<select id="movProduto"><option value="">Selecione...</option>${ps.map((p) => `<option value="${esc(p.id)}">${esc(p.id)} · ${esc(p.nome)}</option>`).join('')}</select><small id="infoProd">&nbsp;</small></label>
+      <label>Quantidade *<input id="movQtd" type="number" min="1" step="1"></label>
+      <label>Observação<input id="movObs" maxlength="120" placeholder="Ex.: nota fiscal, pedido, motivo"></label>
+      ${ent ? '<label>Lote<input id="movLote" maxlength="30"></label><label>Validade<input id="movVal" type="date"></label>' : ''}
+      <div class="actions span2"><button class="primary grande">${ent ? '⬇️ Registrar entrada' : '⬆️ Registrar saída'}</button></div></form>`;
+}
+
+function historicoFiltrado() {
+  const id = $('#hProd').value, tipo = $('#hTipo').value, de = $('#hDe').value, ate = $('#hAte').value;
+  return db.historico.filter((h) => (!id || h.id === id) && (!tipo || h.tipo === tipo) && (!de || diaLocal(h.data) >= de) && (!ate || diaLocal(h.data) <= ate));
+}
+const viewHist = () => `<div class="topo"><h1>Histórico de movimentações</h1><button data-acao="csvHist" class="no-print">⬇ Exportar CSV</button></div>
+  <div class="filtros no-print"><select id="hProd" aria-label="Produto"><option value="">Todos os produtos</option>${db.produtos.map((p) => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')}</select>
+  <select id="hTipo" aria-label="Tipo"><option value="">Todos os tipos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option><option value="ajuste">Ajustes</option></select>
+  <label>De<input id="hDe" type="date"></label><label>Até<input id="hAte" type="date"></label></div>
+  ${tabela(['Data e hora', 'Produto', 'Tipo', 'Qtd.', 'Saldo', 'Lote', 'Observação', 'Usuário'], 'tbHist')}`;
+function linhasHist() {
+  const l = historicoFiltrado();
+  $('#tbHist').innerHTML = l.length ? l.map((h) => `<tr><td>${dataHora(h.data)}</td><td>${esc(h.id)} · ${esc(h.nome)}</td><td>${selo(h.tipo)}</td><td>${h.tipo === 'ajuste' && h.qtd > 0 ? '+' : ''}${h.qtd}</td>
+    <td>${h.saldo}</td><td>${esc(h.lote) || '—'}</td><td>${esc(h.obs) || '—'}</td><td>${esc(h.usuario)}</td></tr>`).join('') : vazio(8, '📭 Nenhuma movimentação neste filtro.');
+}
+
+function viewInv() {
+  return `<div class="topo"><h1>Inventário físico</h1><button class="primary" data-acao="aplicarInv">✅ Aplicar contagem</button></div>
+    <p class="sub">Informe a quantidade contada. Deixe em branco o que não contou. As diferenças viram movimentações de "Ajuste" no histórico.</p>
+    ${tabela(['Código', 'Produto', 'No sistema', 'Contado', 'Diferença'], 'tbInv')}`;
+}
+const linhasInv = () => ($('#tbInv').innerHTML = db.produtos.map((p) => `<tr data-sis="${p.qtd}"><td>${esc(p.id)}</td><td>${esc(p.nome)}</td><td>${p.qtd}</td>
+  <td><input type="number" min="0" step="1" data-id="${esc(p.id)}" aria-label="Contagem de ${esc(p.nome)}" style="max-width:110px"></td><td class="dif">—</td></tr>`).join('') || vazio(5, 'Sem produtos.'));
+
+function viewRel() {
+  const ps = db.produtos, c = ps.reduce((s, p) => s + p.qtd * p.compra, 0), v = ps.reduce((s, p) => s + p.qtd * p.venda, 0);
+  return `<div class="topo"><h1>Relatórios</h1><div class="no-print"><button data-acao="csvPos">⬇ Exportar CSV</button> <button data-acao="imprimir">🖨 Imprimir / salvar PDF</button></div></div>
+    <div class="cards">${card('Valor total (preço de compra)', moeda(c))}${card('Valor total (preço de venda)', moeda(v))}${card('Margem potencial', moeda(v - c))}${card('Unidades em estoque', ps.reduce((s, p) => s + p.qtd, 0))}</div>
+    <h2>Posição atual do estoque</h2>${tabela(['Código', 'Produto', 'Categoria', 'Fornecedor', 'Qtd.', 'Custo unit.', 'Valor em estoque', 'Situação'], 'tbPos')}
+    <h2>Controle de validade</h2>${tabela(['Produto', 'Lote', 'Validade', 'Situação'], 'tbVal')}`;
+}
+function linhasRel() {
+  $('#tbPos').innerHTML = db.produtos.map((p) => `<tr><td>${esc(p.id)}</td><td>${esc(p.nome)}</td><td>${esc(p.categoria)}</td><td>${esc(nomeForn(p.fornecedorId))}</td><td>${p.qtd}</td>
+    <td>${moeda(p.compra)}</td><td>${moeda(p.qtd * p.compra)}</td><td>${seloProduto(p)}</td></tr>`).join('') || vazio(8, 'Sem produtos.');
+  const cv = db.produtos.filter((p) => p.validade).sort((a, b) => a.validade.localeCompare(b.validade));
+  $('#tbVal').innerHTML = cv.map((p) => `<tr><td>${esc(p.nome)}</td><td>${esc(p.lote) || '—'}</td><td>${dataBR(p.validade)}</td><td>${validadeStatus(p) ? selo(validadeStatus(p)) : selo('ok')}</td></tr>`).join('') || vazio(4, 'Nenhum produto com validade cadastrada.');
+}
+
+const viewConfig = () => `<div class="topo"><h1>Backup e dados</h1></div>
+  <div class="grid2">
+    <section class="painel"><h2>💾 Exportar backup</h2><p>Baixa um arquivo .json com todos os dados. Guarde-o em local seguro.</p>
+      <p><small>Último backup: ${db.ultimoBackup ? dataHora(db.ultimoBackup) : 'nunca'}</small></p><button class="primary" data-acao="backup">⬇ Baixar backup</button></section>
+    <section class="painel"><h2>📂 Importar backup</h2><p>Substitui TODOS os dados atuais pelos do arquivo escolhido.</p><input type="file" id="fImp" accept=".json,application/json"></section>
+  </div>
+  <section class="painel" style="margin-top:1rem"><h2>🧪 Dados de exemplo</h2><p>Restaura o conjunto de demonstração. Os dados atuais serão perdidos.</p><button class="perigo" data-acao="exemplo">Restaurar exemplo</button></section>`;
+
+const VIEWS = { painel: viewPainel, produtos: () => viewEnt('produtos'), movimentar: viewMov, historico: viewHist, fornecedores: () => viewEnt('fornecedores'),
+  categorias: () => viewEnt('categorias'), inventario: viewInv, relatorios: viewRel, usuarios: () => viewEnt('usuarios'), config: viewConfig };
+const ATUALIZA = { produtos: () => linhasEnt('produtos'), fornecedores: () => linhasEnt('fornecedores'), categorias: () => linhasEnt('categorias'),
+  usuarios: () => linhasEnt('usuarios'), historico: linhasHist, inventario: linhasInv, relatorios: linhasRel };
+
+function render() {
+  $('#menu').innerHTML = NAV.filter((n) => !n[3] || ehAdmin()).map(([k, i, t]) => `<button data-ir="${k}" class="${k === tela ? 'active' : ''}"><span>${i}</span> ${t}</button>`).join('');
+  $('#uNome').textContent = `${usuarioAtual().nome} · ${ehAdmin() ? 'Administrador' : 'Operador'}`;
+  $('#tela').innerHTML = VIEWS[tela]();
+  ATUALIZA[tela]?.();
+}
+function ir(t) { if (NAV.find((n) => n[0] === t)?.[3] && !ehAdmin()) return; tela = t; render(); window.scrollTo(0, 0); }
+
+/* ---------- Formulário genérico (janela) ---------- */
+function campoHTML(c, item) {
+  const v = item ? item[c.k] : '', dis = item && c.soNovo ? 'disabled' : '';
+  let ctl;
+  if (c.t === 'select') ctl = `<select name="${c.k}" ${dis}><option value="">${c.vazio ?? 'Selecione...'}</option>${c.op().map(([val, rot]) => `<option value="${esc(val)}" ${val === v ? 'selected' : ''}>${esc(rot)}</option>`).join('')}</select>`;
+  else ctl = `<input name="${c.k}" type="${c.t}" value="${c.t === 'password' ? '' : esc(v)}" ${c.passo ? `step="${c.passo}" min="0"` : ''} ${dis} autocomplete="${c.t === 'password' ? 'new-password' : 'off'}">`;
+  return `<label class="${c.largo ? 'span2' : ''}">${c.r}${c.obrig ? ' *' : ''}${ctl}${c.dica ? `<small>${c.dica}</small>` : ''}</label>`;
+}
+function abrirForm(chave, id) {
+  const ent = ENT[chave], item = id ? ent.lista().find((x) => x.id === id) : null;
+  formAtual = { chave, id };
+  $('#mTitulo').textContent = (item ? 'Editar ' : 'Novo ') + ent.singular;
+  $('#mCampos').innerHTML = ent.campos.map((c) => campoHTML(c, item)).join('');
+  $('#mErro').textContent = '';
+  $('#modal').showModal();
+}
+$('#formModal').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { chave, id } = formAtual, d = {};
+  ENT[chave].campos.forEach((c) => {
+    if (id && c.soNovo) return;
+    const v = e.target.elements[c.k].value;
+    d[c.k] = c.t === 'number' ? (v === '' ? 0 : Number(v)) : c.t === 'password' ? v : v.trim();
+  });
+  const r = await salvarEntidade(chave, d, id);
+  if (r.erro) { $('#mErro').textContent = r.erro; return; }
+  $('#modal').close(); render();
+  aviso(id ? 'Alterações salvas com sucesso.' : `${ENT[chave].singular[0].toUpperCase() + ENT[chave].singular.slice(1)} cadastrado com sucesso.`);
+});
+$('#mCancelar').addEventListener('click', () => $('#modal').close());
+
+/* ---------- Eventos ---------- */
+$('#menu').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if (b) ir(b.dataset.ir); });
+
+$('#tela').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-acao],[data-ir]');
+  if (!b) return;
+  if (b.dataset.ir) return ir(b.dataset.ir);
+  const { acao, ent: chave, id } = b.dataset;
+  if (acao === 'novo') abrirForm(chave);
+  else if (acao === 'editar') abrirForm(chave, id);
+  else if (acao === 'excluir') {
+    const it = ENT[chave].lista().find((x) => x.id === id);
+    if (!(await confirmar(`Excluir ${ENT[chave].singular} "${it?.nome}"? Esta ação não pode ser desfeita.`))) return;
+    const r = excluirEntidade(chave, id);
+    if (r.erro) aviso(r.erro, 'erro'); else { render(); aviso('Excluído com sucesso.'); }
+  } else if (acao === 'tipoMov') { tipoMov = b.dataset.tipo; render(); }
+  else if (acao === 'csvHist') baixarCSV('historico.csv', ['Data', 'Código', 'Produto', 'Tipo', 'Qtd', 'Saldo', 'Lote', 'Observação', 'Usuário'],
+    historicoFiltrado().map((h) => [dataHora(h.data), h.id, h.nome, ROT[h.tipo], h.qtd, h.saldo, h.lote, h.obs, h.usuario]));
+  else if (acao === 'csvPos') baixarCSV('posicao-estoque.csv', ['Código', 'Produto', 'Categoria', 'Fornecedor', 'Qtd', 'Custo unit.', 'Valor em estoque', 'Validade'],
+    db.produtos.map((p) => [p.id, p.nome, p.categoria, nomeForn(p.fornecedorId), p.qtd, p.compra, +(p.qtd * p.compra).toFixed(2), dataBR(p.validade)]));
+  else if (acao === 'imprimir') window.print();
+  else if (acao === 'aplicarInv') aplicarInventario();
+  else if (acao === 'backup') { baixar(`backup-estoque-${hoje()}.json`, exportarBackup(), 'application/json'); aviso('Backup gerado. Guarde o arquivo em local seguro.'); render(); }
+  else if (acao === 'exemplo' && (await confirmar('Restaurar os dados de exemplo? Todos os dados atuais serão perdidos.'))) { await restaurarExemplo(); garantirSessao(); }
+});
+
+async function aplicarInventario() {
+  const itens = [...document.querySelectorAll('#tbInv input')].filter((i) => i.value !== '').map((i) => ({ id: i.dataset.id, c: Number(i.value) }));
+  if (!itens.length) return aviso('Informe ao menos uma contagem.', 'erro');
+  if (itens.some((x) => !Number.isInteger(x.c) || x.c < 0)) return aviso('As contagens devem ser números inteiros, sem valores negativos.', 'erro');
+  const difs = itens.filter((x) => x.c !== buscarProduto(x.id).qtd);
+  if (!difs.length) return aviso('Nenhuma divergência: o estoque confere com a contagem. ✅');
+  if (!(await confirmar(`${difs.length} produto(s) com divergência. Ajustar o estoque para a quantidade contada?`))) return;
+  difs.forEach((x) => ajustarEstoque(x.id, x.c));
+  render(); aviso(`${difs.length} ajuste(s) registrado(s) no histórico.`);
+}
+
+$('#tela').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (e.target.id !== 'formMov') return;
+  const extra = { obs: $('#movObs').value.trim(), lote: $('#movLote')?.value.trim(), validade: $('#movVal')?.value };
+  const r = movimentar($('#movProduto').value, tipoMov, Number($('#movQtd').value), extra);
+  if (r.erro) return aviso(r.erro, 'erro');
+  const p = r.produto, msg = `${tipoMov === 'entrada' ? 'Entrada' : 'Saída'} registrada: ${p.nome}, saldo ${p.qtd}.`;
+  render();
+  if (p.qtd <= p.min) aviso(`${msg} Atenção: ${p.qtd === 0 ? 'produto sem estoque' : 'estoque baixo'} (mínimo ${p.min}).`, 'alerta'); else aviso(msg);
+});
+
+// Filtros e campos que reagem enquanto o usuário digita/escolhe.
+$('#tela').addEventListener('input', (e) => {
+  const id = e.target.id;
+  if (/^f(Busca|Cat|Sit)$/.test(id)) ATUALIZA.produtos();
+  else if (/^h(Prod|Tipo|De|Ate)$/.test(id)) linhasHist();
+  else if (id === 'movProduto') {
+    const p = buscarProduto(e.target.value);
+    $('#infoProd').textContent = p ? `Saldo atual: ${p.qtd} un. · Mínimo: ${p.min}${p.validade ? ' · Validade: ' + dataBR(p.validade) : ''}` : '\u00a0';
+  } else if (e.target.closest('#tbInv')) {
+    const tr = e.target.closest('tr'), v = e.target.value;
+    tr.querySelector('.dif').textContent = v === '' ? '—' : (Number(v) - Number(tr.dataset.sis) > 0 ? '+' : '') + (Number(v) - Number(tr.dataset.sis));
+  }
+});
+// Leitor de código de barras: o leitor "digita" o código e envia Enter.
+$('#tela').addEventListener('keydown', (e) => {
+  if (e.target.id !== 'movBarras' || e.key !== 'Enter') return;
+  e.preventDefault();
+  const q = e.target.value.trim().toLowerCase(), p = db.produtos.find((x) => x.barras === e.target.value.trim() || x.id.toLowerCase() === q);
+  if (!p) return aviso('Nenhum produto com este código.', 'erro');
+  $('#movProduto').value = p.id; $('#movProduto').dispatchEvent(new Event('input', { bubbles: true }));
+  e.target.value = ''; $('#movQtd').focus();
+});
+$('#tela').addEventListener('change', async (e) => {
+  if (e.target.id !== 'fImp' || !e.target.files[0]) return;
+  const r = importarBackup(await e.target.files[0].text());
+  if (r.erro) return aviso(r.erro, 'erro');
+  garantirSessao(); if (usuarioAtual()) aviso('Backup importado com sucesso.');
+});
+
+/* ---------- Login / sessão ---------- */
+function abrirApp() { $('#login').hidden = true; $('#app').hidden = false; tela = 'painel'; render(); }
+function sair() { setSessao(null); $('#app').hidden = true; $('#login').hidden = false; }
+function garantirSessao() { if (usuarioAtual()) { tela = 'config'; render(); } else { sair(); $('#lErro').textContent = 'Dados restaurados. Entre novamente.'; } }
+
+$('#formLogin').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    if (!db) await iniciarDados();
+    const u = await entrar($('#lLogin').value, $('#lSenha').value);
+    if (!u) return ($('#lErro').textContent = 'Usuário ou senha incorretos.');
+  } catch { return ($('#lErro').textContent = 'Este navegador não permite a criptografia necessária. Abra a página por https:// ou localhost.'); }
+  $('#lSenha').value = ''; $('#lErro').textContent = ''; abrirApp();
+});
+$('#btnSair').addEventListener('click', sair);
+
+iniciarDados().then(() => { if (usuarioAtual()) abrirApp(); }).catch(() => { /* tenta de novo ao entrar */ });
+</script>
+</body>
+</html>
