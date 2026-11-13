@@ -58,8 +58,5 @@ controle-de-estoque/
 - O backup é manual (o navegador não consegue agendar cópias sozinho).
 - Não incluídos: leitura de código de barras pela câmera e múltiplos depósitos.
 
-## Autor
-Nome: _______________________  
-Curso/Instituição: _______________________
 
 projeto feito em para facilitar o acesso de pequenos empreendedores a seus próprios produtos, tendo organização e prática de manusear seus produtos 
