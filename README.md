@@ -1,4 +1,4 @@
-[
+
 # controle-de-estoque
 
 Sistema web de controle de estoque em HTML, CSS e JavaScript puro, sem banco de dados e sem bibliotecas. Os dados ficam no `localStorage` do navegador. Projeto acadêmico.
