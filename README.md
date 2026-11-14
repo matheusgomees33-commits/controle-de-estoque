@@ -210,19 +210,6 @@ Use esta lista para conferir o sistema depois de abrir ou publicar:
 | 17 | Fechar e reabrir o navegador | Dados continuam salvos |
 | 18 | Exportar CSV do histórico | Arquivo abre no Excel |
 
-## Como publicar no GitHub
-1. Crie uma conta e um repositório em github.com (**New repository**), com o nome `controle-de-estoque`, público e sem README (este projeto já tem um).
-2. **Pelo site:** em **Add file > Upload files**, arraste o **conteúdo** da pasta do projeto (`index.html`, `css`, `js`, `img` e `README.md`), não a pasta inteira, e clique em **Commit changes**.
-3. **Pelo terminal**, dentro da pasta do projeto:
-   ```
-   git init
-   git add .
-   git commit -m "Primeira versão do sistema de estoque"
-   git branch -M main
-   git remote add origin https://github.com/SEU-USUARIO/controle-de-estoque.git
-   git push -u origin main
-   ```
-4. **Link online:** em **Settings > Pages**, escolha *Deploy from a branch*, branch `main`, pasta `/ (root)` e clique em **Save**. O endereço será `https://SEU-USUARIO.github.io/controle-de-estoque/`.
 
 ## Limitações
 - O login é uma demonstração, sem segurança real (veja [Segurança](#segurança)).
