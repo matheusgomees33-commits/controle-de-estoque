@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Controle de Estoque</title>
+  <link rel="icon" href="img/logo.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- TELA DE LOGIN -->
+  <section id="login" class="login">
+    <form id="formLogin" class="login-card">
+      <img src="img/logo.svg" width="56" height="56" alt="">
+      <h1>Controle de Estoque</h1>
+      <p class="sub">Entre para acessar o sistema</p>
+      <label>Usuário<input id="lLogin" autocomplete="username"></label>
+      <label>Senha<input id="lSenha" type="password" autocomplete="current-password"></label>
+      <p id="lErro" class="erro-inline" role="alert"></p>
+      <button class="primary grande">Entrar</button>
+      <p class="dica">Modo demonstração: <b>qualquer usuário e senha</b> entram.<br>Dica: digite <b>operador</b> para ver o acesso limitado; qualquer outro nome entra como administrador.</p>
+    </form>
+  </section>
+
+  <!-- SISTEMA -->
+  <div id="app" hidden>
+    <aside class="sidebar">
+      <div class="brand"><img src="img/logo.svg" width="36" height="36" alt=""><div><h1>Controle de Estoque</h1><p>Gerenciamento de produtos</p></div></div>
+      <nav id="menu" aria-label="Menu principal"></nav>
+      <div class="user"><span id="uNome"></span><button id="btnSair">↩ Sair</button></div>
+    </aside>
+    <main>
+      <div id="aviso" class="toast" role="status" hidden></div>
+      <div id="tela"></div>
+    </main>
+  </div>
+
+  <!-- JANELAS (formulário genérico e confirmação) -->
+  <dialog id="modal">
+    <form id="formModal" novalidate>
+      <h2 id="mTitulo"></h2>
+      <div id="mCampos" class="form-grid"></div>
+      <p id="mErro" class="erro-inline" role="alert"></p>
+      <div class="actions"><button type="button" id="mCancelar">Cancelar</button><button type="submit" class="primary">💾 Salvar</button></div>
+    </form>
+  </dialog>
+  <dialog id="dlgConf">
+    <p id="confMsg"></p>
+    <div class="actions"><button id="confNao">Cancelar</button><button id="confSim" class="primary">Confirmar</button></div>
+  </dialog>
+
+  <script src="js/dados.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
