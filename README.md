@@ -1,7 +1,7 @@
 
 # Controle de Estoque
 
-Sistema web de controle de estoque desenvolvido em **HTML, CSS e JavaScript puro**, sem banco de dados, sem frameworks e sem bibliotecas. Os dados ficam salvos no navegador (`localStorage`). Projeto acadêmico.
+Sistema web de controle de estoque desenvolvido em **HTML, CSS e JavaScript puro**, sem banco de dados, sem frameworks e sem bibliotecas. Os dados ficam salvos no navegador (`localStorage`). Projeto pessoal.
 
 
 ## Sobre o projeto
